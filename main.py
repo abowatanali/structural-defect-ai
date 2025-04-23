@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 import shutil
 import uuid
+import os
 
 app = FastAPI()
 
@@ -30,7 +31,13 @@ async def analyze_image(file: UploadFile = File(...)):
     detected_classes = [model.names[int(cls)] for cls in result.boxes.cls]
     confidences = [float(conf) for conf in result.boxes.conf]
 
-    return {
-        "detected": detected_classes,
-        "confidences": confidences
-    }
+    # Delete the temporary file
+    os.remove(temp_filename)
+
+    # Format response to match frontend expectation
+    if detected_classes:
+        message = f"Detected: {detected_classes[0]} - Confidence: {confidences[0]*100:.2f}%"
+    else:
+        message = "No defects detected."
+
+    return { "result": message }
